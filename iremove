@@ -7,33 +7,32 @@
 
 LABEL=
 VOLUME=
-VOLUMES=`ls -1 /dev/disk0s1s* | sort -V`
+VOLUMES=$(ls -1 /dev/disk0s1s* | sort -V)
 
 # Might as well leave this.
-if [[ -z $VOLUMES ]]; then
-	echo "Can't find any apfs volumes. Something is very wrong."
+if [ -z "$VOLUMES" ]; then
+	echo "Can't find any apfs volumes. Something is very wrong." 1>&2
 	exit 1
 fi
 
 # Search for android volume
-for i in ${VOLUMES}; do
-	LABEL=`/System/Library/Filesystems/apfs.fs/apfs.util -p $i`
-	if [ "${LABEL}" == "Android" ]; then
+for i in $VOLUMES; do
+	LABEL=$(/System/Library/Filesystems/apfs.fs/apfs.util -p "$i")
+	if [ "$LABEL" = "Android" ]; then
 		VOLUME=$i
 		break
 	fi
 done
-if [ ! -b ${VOLUME} ]; then
+if [ ! -b "$VOLUME" ]; then
 	echo "Cannot find Android volume. You probably haven't installed sandcastle."
 	exit 0
 fi
 
 
-echo "Mounting ${VOLUME}"
+echo "Mounting $VOLUME"
 mkdir -p /tmp/mnt
-mount -t apfs ${VOLUME} /tmp/mnt 
-if [ $? -ne 0 ]; then
-	echo "Failed to mount volume. Are you running as root?";
+if ! mount -t apfs "$VOLUME" /tmp/mnt; then
+	echo "Failed to mount volume. Are you running as root?" 1>&2
 	exit 1
 fi
 
@@ -48,7 +47,7 @@ fi
 if [ -e /tmp/mnt/Library ]; then
 	echo "Either you did something incredibly strange with partitions or something is very wrong."
 	umount /tmp/mnt
-	echo "Unmounted /tmp/mnt"
+	echo "Unmounted /tmp/mnt" 1>&2
 	exit 1
 fi
 
@@ -60,7 +59,7 @@ fi
 
 echo -n "This will free about 2gb. Are you sure you want to delete all Android files? (type yes to continue): "
 read -r CONFIRM
-if [ ! "$CONFIRM" == "yes" ]; then
+if [ ! "$CONFIRM" = "yes" ]; then
 	umount /tmp/mnt
 	echo "Unmounted /tmp/mnt"
 	exit 0
