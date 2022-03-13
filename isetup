@@ -5,25 +5,25 @@
 
 # Check for an Android filesystem, and create one if there isn't
 
-LABEL=
-VOLUME=
-VOLUMES=$(ls -1 /dev/disk0s1s* | sort -V)
+label=
+volume=
+volumes=$(ls -1 /dev/disk0s1s* | sort -V)
 
 # I can't find any way to delete accidentally created apfs volumes. This should help prevent making them in the first place.
-if [ -z "$VOLUMES" ]; then
+if [ -z "$volumes" ]; then
 	echo "Can't find any apfs volumes. Something is very wrong." 1>&2
 	exit 1
 fi
 
 # Search for android volume
-for i in $VOLUMES; do
-	LABEL=$(/System/Library/Filesystems/apfs.fs/apfs.util -p "$i")
-	if [ "$LABEL" = "Android" ]; then
-		VOLUME=$i
+for i in $volumes; do
+	label=$(/System/Library/Filesystems/apfs.fs/apfs.util -p "$i")
+	if [ "$label" = "Android" ]; then
+		volume=$i
 		break;
 	fi
 done
-if [ ! -b "$VOLUME" ]; then
+if [ ! -b "$volume" ]; then
 	echo "Creating new Android volume"
 	newfs_apfs -A -v Android -e /dev/disk0s1
 fi
@@ -31,27 +31,27 @@ fi
 
 # Double check that there's a valid filesystem
 
-LABEL=
-VOLUME=
-VOLUMES=$(ls /dev/disk0s1s* | sort -V)
+label=
+volume=
+volumes=$(ls /dev/disk0s1s* | sort -V)
 
-for i in $VOLUMES; do
-	LABEL=$(/System/Library/Filesystems/apfs.fs/apfs.util -p "$i")
-	if [ "$LABEL" = "Android" ]; then
-		VOLUME=$i
+for i in $volumes; do
+	label=$(/System/Library/Filesystems/apfs.fs/apfs.util -p "$i")
+	if [ "$label" = "Android" ]; then
+		volume=$i
 		break;
 	fi
 done
-if [ ! -b "$VOLUME" ]; then
+if [ ! -b "$volume" ]; then
 	echo "Android volume not found. This should have been caught earlier" 1>&2
 	exit 1
 fi
 
 
 
-echo "Mounting $VOLUME"
+echo "Mounting $volume"
 mkdir -p /tmp/mnt
-if ! mount -t apfs "$VOLUME" /tmp/mnt; then
+if ! mount -t apfs "$volume" /tmp/mnt; then
 	echo "Failed to mount volume. Are you running as root?" 1>&2
 	exit 1
 fi
